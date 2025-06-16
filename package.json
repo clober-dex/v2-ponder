@@ -8,6 +8,7 @@
     "start": "ponder start",
     "db": "ponder db",
     "codegen": "ponder codegen",
+    "serve": "ponder serve",
     "lint": "eslint .",
     "typecheck": "tsc"
   },
@@ -17,8 +18,8 @@
     "viem": "^2.21.3"
   },
   "devDependencies": {
-    "@types/node": "^20.9.0",
-    "eslint": "^8.53.0",
+    "@types/node": "^20.10.0",
+    "eslint": "^8.54.0",
     "eslint-config-ponder": "^0.11.15",
     "typescript": "^5.2.2",
     "@typescript-eslint/eslint-plugin": "^6.2.0",

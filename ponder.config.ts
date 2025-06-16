@@ -1,20 +1,20 @@
-import { createConfig } from "ponder";
+import { createConfig } from 'ponder'
 
-import { ExampleContractAbi } from "./abis/ExampleContractAbi";
+import { BookManagerAbi } from './abis/BookManager'
 
 export default createConfig({
   chains: {
-    mainnet: {
-      id: 1,
-      rpc: process.env.PONDER_RPC_URL_1!,
+    'monad-testnet': {
+      id: 10143,
+      rpc: process.env.MONAD_TESTNET_RPC || 'https://testnet-rpc.monad.xyz',
     },
   },
   contracts: {
-    ExampleContract: {
-      chain: "mainnet",
-      abi: ExampleContractAbi,
-      address: "0x0000000000000000000000000000000000000000",
-      startBlock: 1234567,
+    BookManager: {
+      chain: 'monad-testnet',
+      abi: BookManagerAbi,
+      address: '0xAA9575d63dFC224b9583fC303dB3188C08d5C85A',
+      startBlock: 3196033,
     },
   },
-});
+})
