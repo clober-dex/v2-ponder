@@ -1,11 +1,10 @@
 import { onchainTable } from 'ponder'
 
 export const Token = onchainTable('Token', (t) => ({
-  id: t.bytes().primaryKey(),
+  address: t.bytes().primaryKey(),
   symbol: t.text(),
   name: t.text(),
   decimals: t.bigint(),
-  priceUSD: t.numeric(),
 }))
 
 export const Book = onchainTable('Book', (t) => ({
