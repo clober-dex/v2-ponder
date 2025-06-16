@@ -11,10 +11,10 @@ extends:
     - eslint:recommended
     - plugin:@typescript-eslint/eslint-recommended
     - plugin:prettier/recommended
-    - plugin:import/errors
     - plugin:import/warnings
     - plugin:import/typescript
 rules:
+    import/no-named-as-default: off
     curly: error
     no-return-await: error
     prefer-arrow-callback: error
