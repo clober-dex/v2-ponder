@@ -1,6 +1,91 @@
-import { onchainTable } from "ponder";
+import { onchainTable } from 'ponder'
 
-export const example = onchainTable("example", (t) => ({
-  id: t.text().primaryKey(),
+export const Token = onchainTable('Token', (t) => ({
+  id: t.bytes().primaryKey(),
+  symbol: t.text(),
   name: t.text(),
-}));
+  decimals: t.bigint(),
+  priceUSD: t.numeric(),
+}))
+
+export const Book = onchainTable('Book', (t) => ({
+  id: t.text().primaryKey(),
+  createdAtTimestamp: t.bigint(),
+  createdAtBlockNumber: t.bigint(),
+  quote: t.bytes(),
+  base: t.bytes(),
+  unitSize: t.bigint(),
+  makerPolicy: t.bigint(),
+  makerFee: t.numeric(),
+  isMakerFeeInQuote: t.boolean(),
+  takerPolicy: t.bigint(),
+  takerFee: t.numeric(),
+  isTakerFeeInQuote: t.boolean(),
+  hooks: t.bytes(),
+  priceRaw: t.bigint(),
+  price: t.numeric(),
+  inversePrice: t.numeric(),
+  tick: t.bigint(),
+  lastTakenTimestamp: t.bigint(),
+  lastTakenBlockNumber: t.bigint(),
+}))
+
+export const Depth = onchainTable('Depth', (t) => ({
+  id: t.text().primaryKey(),
+  book: t.bytes(),
+  tick: t.bigint(),
+  priceRaw: t.bigint(),
+  price: t.numeric(),
+  inversePrice: t.numeric(),
+  unitAmount: t.bigint(),
+  baseAmount: t.bigint(),
+  quoteAmount: t.bigint(),
+  latestTakenOrderIndex: t.bigint(),
+}))
+
+export const OpenOrder = onchainTable('OpenOrder', (t) => ({
+  id: t.text().primaryKey(),
+  book: t.bytes(),
+  quote: t.bytes(),
+  base: t.bytes(),
+  origin: t.bytes(),
+  timestamp: t.bigint(),
+  priceRaw: t.bigint(),
+  tick: t.bigint(),
+  orderIndex: t.bigint(),
+  price: t.numeric(),
+  inversePrice: t.numeric(),
+  owner: t.bytes(),
+  amountUSD: t.numeric(),
+  unitAmount: t.bigint(),
+  baseAmount: t.bigint(),
+  quoteAmount: t.bigint(),
+  filledUnitAmount: t.bigint(),
+  filledBaseAmount: t.bigint(),
+  filledQuoteAmount: t.bigint(),
+  claimedUnitAmount: t.bigint(),
+  claimedBaseAmount: t.bigint(),
+  claimedQuoteAmount: t.bigint(),
+  claimableUnitAmount: t.bigint(),
+  claimableBaseAmount: t.bigint(),
+  claimableQuoteAmount: t.bigint(),
+  cancelableUnitAmount: t.bigint(),
+  cancelableBaseAmount: t.bigint(),
+  cancelableQuoteAmount: t.bigint(),
+}))
+
+export const ChartLog = onchainTable('ChartLog', (t) => ({
+  id: t.text().primaryKey(),
+  base: t.bytes(),
+  quote: t.bytes(),
+  marketCode: t.text(),
+  intervalType: t.text(),
+  timestamp: t.bigint(),
+  open: t.numeric(),
+  high: t.numeric(),
+  low: t.numeric(),
+  close: t.numeric(),
+  baseVolume: t.numeric(),
+  bidBookBaseVolume: t.numeric(),
+  askBookBaseVolume: t.numeric(),
+}))
