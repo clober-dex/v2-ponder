@@ -8,6 +8,10 @@ export default createConfig({
       id: 10143,
       rpc: process.env.MONAD_TESTNET_RPC || 'https://testnet-rpc.monad.xyz',
     },
+    'rise-sepolia': {
+      id: 11155931,
+      rpc: process.env.RISE_SEPOLIA_RPC || 'https://testnet.riselabs.xyz',
+    },
   },
   contracts: {
     BookManager: {
