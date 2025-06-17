@@ -1,22 +1,20 @@
 import { ponder } from 'ponder:registry'
 import { Token, Book } from 'ponder:schema'
 import { getAddress } from 'viem'
+import BigNumber from 'bignumber.js'
 
-import { ZERO_BD } from './common/constants'
+import { ZERO_BD, ZERO_BI } from './common/constants'
 import {
   fetchTokenDecimals,
   fetchTokenName,
   fetchTokenSymbol,
 } from './common/token'
 
-const RATE_MASK = 0x7fffffn // 8388607n
-const MAX_FEE_RATE = 500_000n
-const FEE_PRECISION = new BigNumber(1_000_000)
-const ZERO_BI = 0n
-
 export function getFeeRate(feePolicy: number): BigNumber {
+  const RATE_MASK = 0x7fffffn // 8388607n
+  const MAX_FEE_RATE = 500_000n
   const feeBigInt = (BigInt(feePolicy) & RATE_MASK) - MAX_FEE_RATE
-  return new BigNumber(feeBigInt.toString()).div(FEE_PRECISION)
+  return new BigNumber(feeBigInt.toString()).div(new BigNumber('1000000'))
 }
 
 export function getUsesFeeInQuote(feePolicy: number): boolean {
@@ -30,11 +28,14 @@ ponder.on(
     context,
   }: {
     event: any
-    context: { db: any; client: any }
+    context: { db: any; client: any; chain: { id: number } }
   }) => {
-    const bookId = event.params.id.toString()
-    const quoteAddress = getAddress(event.params.quote)
-    const baseAddress = getAddress(event.params.base)
+    console.debug('BookManager:Open event received', {
+      event: event,
+    })
+    const bookId = event.args.id.toString()
+    const quoteAddress = getAddress(event.args.quote)
+    const baseAddress = getAddress(event.args.base)
 
     let quote = await context.db.find(Token, {
       address: quoteAddress,
@@ -93,14 +94,14 @@ ponder.on(
         createdAtBlockNumber: Number(event.block.number),
         quote: quote.id,
         base: base.id,
-        unitSize: event.params.unitSize,
-        makerPolicy: event.params.makerPolicy,
-        makerFee: getFeeRate(event.params.makerPolicy),
-        isMakerFeeInQuote: getUsesFeeInQuote(event.params.makerPolicy),
-        takerPolicy: event.params.takerPolicy,
-        takerFee: getFeeRate(event.params.takerPolicy),
-        isTakerFeeInQuote: getUsesFeeInQuote(event.params.takerPolicy),
-        hooks: event.params.hooks,
+        unitSize: event.args.unitSize,
+        makerPolicy: event.args.makerPolicy,
+        makerFee: getFeeRate(event.args.makerPolicy),
+        isMakerFeeInQuote: getUsesFeeInQuote(event.args.makerPolicy),
+        takerPolicy: event.args.takerPolicy,
+        takerFee: getFeeRate(event.args.takerPolicy),
+        isTakerFeeInQuote: getUsesFeeInQuote(event.args.takerPolicy),
+        hooks: event.args.hooks,
         priceRaw: ZERO_BI,
         price: ZERO_BD,
         inversePrice: ZERO_BD,

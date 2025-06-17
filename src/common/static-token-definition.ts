@@ -1,19 +1,31 @@
+import fs from 'fs'
+
 import { getAddress, isAddress, isAddressEqual, zeroAddress } from 'viem'
 
-import {
-  NATIVE_TOKEN_DEFINITION,
-  STATIC_TOKEN_DEFINITIONS,
-  TokenDefinition,
-} from './chain'
+type TokenDefinition = {
+  address: `0x${string}`
+  symbol: string
+  name: string
+  decimals: number
+}
 
 // Helper for hardcoded tokens
 export const getStaticDefinition = (
+  chainId: number,
   tokenAddress: `0x${string}`,
 ): TokenDefinition | null => {
-  const staticDefinitions = STATIC_TOKEN_DEFINITIONS
+  const staticDefinitions = (
+    fs.existsSync(`./${chainId}-tokens.json`)
+      ? JSON.parse(fs.readFileSync(`./${chainId}-tokens.json`, 'utf-8'))
+      : []
+  ) as TokenDefinition[]
   tokenAddress = getAddress(tokenAddress)
   if (isAddressEqual(tokenAddress, zeroAddress)) {
-    return NATIVE_TOKEN_DEFINITION
+    return (
+      staticDefinitions.find((def) =>
+        isAddressEqual(def.address, zeroAddress),
+      ) || null
+    )
   }
 
   // Search the definition using the address

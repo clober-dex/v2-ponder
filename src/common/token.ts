@@ -4,9 +4,9 @@ import { getStaticDefinition } from './static-token-definition'
 
 export async function fetchTokenSymbol(
   address: `0x${string}`,
-  context: { client: any },
+  context: { client: any; chain: { id: number } },
 ): Promise<string> {
-  const staticDef = getStaticDefinition(address)
+  const staticDef = getStaticDefinition(context.chain.id, address)
   if (staticDef) {
     return staticDef.symbol
   }
@@ -25,9 +25,9 @@ export async function fetchTokenSymbol(
 
 export async function fetchTokenName(
   address: `0x${string}`,
-  context: { client: any },
+  context: { client: any; chain: { id: number } },
 ): Promise<string> {
-  const staticDef = getStaticDefinition(address)
+  const staticDef = getStaticDefinition(context.chain.id, address)
   if (staticDef) {
     return staticDef.name
   }
@@ -46,9 +46,9 @@ export async function fetchTokenName(
 
 export async function fetchTokenDecimals(
   address: `0x${string}`,
-  context: { client: any },
+  context: { client: any; chain: { id: number } },
 ): Promise<number | null> {
-  const staticDef = getStaticDefinition(address)
+  const staticDef = getStaticDefinition(context.chain.id, address)
   if (staticDef) {
     return staticDef.decimals
   }

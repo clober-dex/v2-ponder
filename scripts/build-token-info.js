@@ -1,6 +1,7 @@
 import fs from 'fs'
 
 import yargs from 'yargs'
+import { getAddress } from 'viem'
 
 async function main() {
   const argv = yargs(process.argv.slice(2))
@@ -10,8 +11,15 @@ async function main() {
       type: 'string',
       demandOption: true,
     })
+    .option('chainId', {
+      alias: 'c',
+      description: 'Chain ID to build for',
+      type: 'number',
+      demandOption: true,
+    })
     .help().argv
 
+  const chainId = argv.chainId
   const response = await fetch(argv.subgraph, {
     method: 'POST',
     headers: {
@@ -32,19 +40,20 @@ async function main() {
     data: { tokens },
   } = await response.json()
 
-  const text =
-    '[' +
-    tokens
-      .map((token) => {
-        return `{address: getAddress('${token.id.toLowerCase()}'), symbol: '${
-          token.symbol
-        }', name: '${token.name}', decimals: ${token.decimals}}`
-      })
-      .join(',\n') +
-    ']'
-
-  fs.writeFileSync('./tokens.txt', text)
-  console.log('tokens.txt generated successfully')
+  fs.writeFileSync(
+    `${chainId}-tokens.json`,
+    JSON.stringify(
+      tokens.map((token) => ({
+        address: getAddress(token.id),
+        name: token.name,
+        symbol: token.symbol,
+        decimals: token.decimals,
+      })),
+    ),
+  )
+  console.log(
+    `Token info for chain ID ${chainId} has been written to ${chainId}-tokens.json`,
+  )
 }
 
 main()

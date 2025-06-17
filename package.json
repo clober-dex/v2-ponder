@@ -10,8 +10,7 @@
     "codegen": "ponder codegen",
     "serve": "ponder serve",
     "lint": "eslint .",
-    "typecheck": "tsc",
-    "build-token-info": "node scripts/build-token-info.js"
+    "typecheck": "tsc"
   },
   "dependencies": {
     "bignumber.js": "^9.3.0",

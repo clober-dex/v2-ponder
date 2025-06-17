@@ -1,7 +1,7 @@
 import { onchainTable } from 'ponder'
 
 export const Token = onchainTable('Token', (t) => ({
-  address: t.bytes().primaryKey(),
+  address: t.text().primaryKey(),
   symbol: t.text(),
   name: t.text(),
   decimals: t.bigint(),
@@ -11,8 +11,8 @@ export const Book = onchainTable('Book', (t) => ({
   id: t.text().primaryKey(),
   createdAtTimestamp: t.bigint(),
   createdAtBlockNumber: t.bigint(),
-  quote: t.bytes(),
-  base: t.bytes(),
+  quote: t.text(),
+  base: t.text(),
   unitSize: t.bigint(),
   makerPolicy: t.bigint(),
   makerFee: t.numeric(),
@@ -20,7 +20,7 @@ export const Book = onchainTable('Book', (t) => ({
   takerPolicy: t.bigint(),
   takerFee: t.numeric(),
   isTakerFeeInQuote: t.boolean(),
-  hooks: t.bytes(),
+  hooks: t.text(),
   priceRaw: t.bigint(),
   price: t.numeric(),
   inversePrice: t.numeric(),
@@ -31,7 +31,7 @@ export const Book = onchainTable('Book', (t) => ({
 
 export const Depth = onchainTable('Depth', (t) => ({
   id: t.text().primaryKey(),
-  book: t.bytes(),
+  book: t.text(),
   tick: t.bigint(),
   priceRaw: t.bigint(),
   price: t.numeric(),
@@ -44,17 +44,17 @@ export const Depth = onchainTable('Depth', (t) => ({
 
 export const OpenOrder = onchainTable('OpenOrder', (t) => ({
   id: t.text().primaryKey(),
-  book: t.bytes(),
-  quote: t.bytes(),
-  base: t.bytes(),
-  origin: t.bytes(),
+  book: t.text(),
+  quote: t.text(),
+  base: t.text(),
+  origin: t.text(),
   timestamp: t.bigint(),
   priceRaw: t.bigint(),
   tick: t.bigint(),
   orderIndex: t.bigint(),
   price: t.numeric(),
   inversePrice: t.numeric(),
-  owner: t.bytes(),
+  owner: t.text(),
   amountUSD: t.numeric(),
   unitAmount: t.bigint(),
   baseAmount: t.bigint(),
@@ -75,8 +75,8 @@ export const OpenOrder = onchainTable('OpenOrder', (t) => ({
 
 export const ChartLog = onchainTable('ChartLog', (t) => ({
   id: t.text().primaryKey(),
-  base: t.bytes(),
-  quote: t.bytes(),
+  base: t.text(),
+  quote: t.text(),
   marketCode: t.text(),
   intervalType: t.text(),
   timestamp: t.bigint(),
