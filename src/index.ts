@@ -332,11 +332,11 @@ ponder.on(
     const takenUnitAmount = BigInt(event.args.unit)
     const takenBaseAmount = unitToBase(book.unitSize, takenUnitAmount, priceRaw)
     const takenBaseAmountDecimal = Number(
-      formatUnits(BigInt(takenBaseAmount), base.decimals),
+      formatUnits(BigInt(takenBaseAmount), Number(base.decimals)),
     )
     const takenQuoteAmount = unitToQuote(book.unitSize, takenUnitAmount)
     const takenQuoteAmountDecimal = Number(
-      formatUnits(BigInt(takenQuoteAmount), quote.decimals),
+      formatUnits(BigInt(takenQuoteAmount), Number(quote.decimals)),
     )
 
     // update book
