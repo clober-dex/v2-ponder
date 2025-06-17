@@ -1,5 +1,5 @@
 import { ponder } from 'ponder:registry'
-import { Token, Book } from 'ponder:schema'
+import { Book, Token } from 'ponder:schema'
 import { formatUnits, getAddress, isAddressEqual, zeroAddress } from 'viem'
 import BigNumber from 'bignumber.js'
 
@@ -12,7 +12,7 @@ import {
   fetchTokenSymbol,
 } from './common/token'
 import { formatInvertedPrice, formatPrice, tickToPrice } from './common/tick'
-import { encodeOrderID } from './common/order'
+import { decodeBookIDFromOrderID, encodeOrderID } from './common/order'
 import { unitToBase, unitToQuote } from './common/amount'
 import {
   CHART_LOG_INTERVALS,
@@ -538,10 +538,88 @@ ponder.on(
     event,
     context,
   }: {
-    event: any
+    event: {
+      args: {
+        orderId: bigint
+        unit: bigint
+      }
+      block: { timestamp: bigint; number: bigint }
+      transaction: { hash: string; from: `0x${string}` }
+    }
     context: { db: any; client: any; chain: { id: number } }
   }) => {
-    // Handle the Cancel event
+    const unit = BigInt(event.args.unit)
+    if (unit === 0n) {
+      return
+    }
+    const bookID = decodeBookIDFromOrderID(event.args.orderId)
+    const orderID = event.args.orderId.toString()
+    const [book, openOrder] = await Promise.all([
+      context.db.find(Book, {
+        id: bookID,
+      }),
+      context.db.find(OpenOrder, {
+        id: orderID,
+      }),
+    ])
+    if (!openOrder) {
+      console.debug(`[CANCEL] Open order not found: ${orderID}`)
+      return
+    }
+    if (!book) {
+      console.debug(`[CANCEL] Book not found: ${bookID}`)
+      return
+    }
+
+    const [base, quote] = await Promise.all([
+      context.db.find(Token, {
+        address: getAddress(book.base),
+      }),
+      context.db.find(Token, {
+        address: getAddress(book.quote),
+      }),
+    ])
+    if (base && quote) {
+      const priceRaw = tickToPrice(Number(openOrder.tick))
+
+      const quoteAmount = unitToQuote(book.unitSize, unit)
+      const baseAmount = unitToBase(book.unitSize, unit, priceRaw)
+
+      await context.db.update(OpenOrder, { id: orderID }).set((row: any) => {
+        return {
+          unitAmount: row.unitAmount - unit,
+          quoteAmount: row.quoteAmount - quoteAmount,
+          baseAmount: row.baseAmount - baseAmount,
+          // cancelable
+          cancelableUnitAmount: row.cancelableUnitAmount - unit,
+          cancelableQuoteAmount: row.cancelableQuoteAmount - quoteAmount,
+          cancelableBaseAmount: row.cancelableBaseAmount - baseAmount,
+        }
+      })
+
+      // depth data
+      await context.db
+        .update(Depth, {
+          id: bookID.concat('-').concat(openOrder.tick.toString()),
+        })
+        .set((row: any) => ({
+          unitAmount: row.unitAmount - unit,
+          quoteAmount: row.quoteAmount - quoteAmount,
+          baseAmount: row.baseAmount - baseAmount,
+        }))
+
+      if (
+        openOrder.cancelableUnitAmount + openOrder.claimableUnitAmount ===
+        0n
+      ) {
+        await context.db.delete(OpenOrder, { id: orderID })
+      }
+    } else {
+      console.debug(
+        `[CANCEL] Token not found for book: ${bookID} (${quote?.address}, ${base?.address})`,
+      )
+      return
+    }
   },
 )
 
@@ -551,10 +629,78 @@ ponder.on(
     event,
     context,
   }: {
-    event: any
+    event: {
+      args: {
+        orderId: bigint
+        unit: bigint
+      }
+      block: { timestamp: bigint; number: bigint }
+      transaction: { hash: string; from: `0x${string}` }
+    }
     context: { db: any; client: any; chain: { id: number } }
   }) => {
-    // Handle the Claim event
+    const unit = BigInt(event.args.unit)
+    if (unit === 0n) {
+      return
+    }
+    const bookID = decodeBookIDFromOrderID(event.args.orderId)
+    const orderID = event.args.orderId.toString()
+    const [book, openOrder] = await Promise.all([
+      context.db.find(Book, {
+        id: bookID,
+      }),
+      context.db.find(OpenOrder, {
+        id: orderID,
+      }),
+    ])
+    if (!openOrder) {
+      console.debug(`[CLAIM] Open order not found: ${orderID}`)
+      return
+    }
+    if (!book) {
+      console.debug(`[CLAIM] Book not found: ${bookID}`)
+      return
+    }
+
+    const [base, quote] = await Promise.all([
+      context.db.find(Token, {
+        address: getAddress(book.base),
+      }),
+      context.db.find(Token, {
+        address: getAddress(book.quote),
+      }),
+    ])
+    if (base && quote) {
+      const priceRaw = tickToPrice(Number(openOrder.tick))
+
+      const quoteAmount = unitToQuote(book.unitSize, unit)
+      const baseAmount = unitToBase(book.unitSize, unit, priceRaw)
+
+      await context.db.update(OpenOrder, { id: orderID }).set((row: any) => {
+        return {
+          // claimed
+          claimedUnitAmount: row.claimedUnitAmount + unit,
+          claimedBaseAmount: row.claimedBaseAmount + baseAmount,
+          claimedQuoteAmount: row.claimedQuoteAmount + quoteAmount,
+          // claimable
+          claimableUnitAmount: row.claimableUnitAmount - unit,
+          claimableBaseAmount: row.claimableBaseAmount - baseAmount,
+          claimableQuoteAmount: row.claimableQuoteAmount - quoteAmount,
+        }
+      })
+
+      if (
+        openOrder.cancelableUnitAmount + openOrder.claimableUnitAmount ===
+        0n
+      ) {
+        await context.db.delete(OpenOrder, { id: orderID })
+      }
+    } else {
+      console.debug(
+        `[CLAIM] Token not found for book: ${bookID} (${quote?.address}, ${base?.address})`,
+      )
+      return
+    }
   },
 )
 

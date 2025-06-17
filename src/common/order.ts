@@ -18,10 +18,3 @@ export function decodeBookIDFromOrderID(orderID: bigint): string {
   const shift64 = BigInt(2) ** BigInt(64)
   return (orderID / shift64).toString()
 }
-
-export function getPendingUnitAmount(openOrder: {
-  cancelableUnitAmount: bigint
-  claimableUnitAmount: bigint
-}): bigint {
-  return openOrder.cancelableUnitAmount + openOrder.claimableUnitAmount
-}
