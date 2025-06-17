@@ -30,9 +30,6 @@ ponder.on(
     event: any
     context: { db: any; client: any; chain: { id: number } }
   }) => {
-    console.debug('BookManager:Open event received', {
-      event: event,
-    })
     const bookId = event.args.id.toString()
     const quoteAddress = getAddress(event.args.quote)
     const baseAddress = getAddress(event.args.base)
@@ -117,22 +114,67 @@ ponder.on(
   },
 )
 
-ponder.on('BookManager:Make', async ({ event, context }) => {
-  // Handle the Make event
-})
+ponder.on(
+  'BookManager:Make',
+  async ({
+    event,
+    context,
+  }: {
+    event: any
+    context: { db: any; client: any; chain: { id: number } }
+  }) => {
+    // Handle the Make event
+  },
+)
 
-ponder.on('BookManager:Take', async ({ event, context }) => {
-  // Handle the Take event
-})
+ponder.on(
+  'BookManager:Take',
+  async ({
+    event,
+    context,
+  }: {
+    event: any
+    context: { db: any; client: any; chain: { id: number } }
+  }) => {
+    // Handle the Take event
+  },
+)
 
-ponder.on('BookManager:Cancel', async ({ event, context }) => {
-  // Handle the Cancel event
-})
+ponder.on(
+  'BookManager:Cancel',
+  async ({
+    event,
+    context,
+  }: {
+    event: any
+    context: { db: any; client: any; chain: { id: number } }
+  }) => {
+    // Handle the Cancel event
+  },
+)
 
-ponder.on('BookManager:Claim', async ({ event, context }) => {
-  // Handle the Claim event
-})
+ponder.on(
+  'BookManager:Claim',
+  async ({
+    event,
+    context,
+  }: {
+    event: any
+    context: { db: any; client: any; chain: { id: number } }
+  }) => {
+    // Handle the Claim event
+  },
+)
 
-ponder.on('BookManager:Transfer', async ({ event, context }) => {
-  // Handle the Transfer event
-})
+ponder.on(
+  'BookManager:Transfer',
+  async ({
+    event,
+    context,
+  }: {
+    event: any
+    context: { db: any; client: any; chain: { id: number } }
+  }) => {
+    // Handle the Transfer event
+  },
+)
