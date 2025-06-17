@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js'
 
 import { Depth, OpenOrder } from '../ponder.schema'
 
-import { ZERO_BD, ZERO_BI } from './common/constants'
+import { ONE_BI, ZERO_BD, ZERO_BI } from './common/constants'
 import {
   fetchTokenDecimals,
   fetchTokenName,
@@ -153,7 +153,7 @@ ponder.on(
         unit: bigint
         provider: `0x${string}`
       }
-      block: { timestamp: bigint }
+      block: { timestamp: bigint; number: bigint }
       transaction: { hash: string; from: `0x${string}` }
     }
     context: { db: any; client: any; chain: { id: number } }
@@ -275,10 +275,164 @@ ponder.on(
     event,
     context,
   }: {
-    event: any
+    event: {
+      args: {
+        bookId: bigint
+        user: `0x${string}`
+        tick: number
+        unit: bigint
+      }
+      block: { timestamp: bigint; number: bigint }
+      transaction: { hash: string; from: `0x${string}` }
+    }
     context: { db: any; client: any; chain: { id: number } }
   }) => {
-    // Handle the Take event
+    if (event.args.unit === 0n) {
+      return
+    }
+    const tick = BigInt(event.args.tick)
+    const priceRaw = tickToPrice(Number(tick))
+    const book = await context.db.find(Book, {
+      id: event.args.bookId.toString(),
+    })
+    if (!book) {
+      console.debug(`[TAKE] Book not found: ${event.args.bookId}`)
+      return
+    }
+
+    const depthID = event.args.bookId
+      .toString()
+      .concat('-')
+      .concat(tick.toString())
+    const [depth, quote, base] = await Promise.all([
+      context.db.find(Depth, {
+        id: depthID,
+      }),
+      context.db.find(Token, {
+        address: getAddress(book.quote),
+      }),
+      context.db.find(Token, {
+        address: getAddress(book.base),
+      }),
+    ])
+    if (!depth) {
+      console.debug(`[TAKE] Depth not found: ${depthID}`)
+      return
+    }
+    if (!quote || !base) {
+      console.debug(
+        `[TAKE] Token not found for book: ${event.args.bookId} (${quote?.address}, ${base?.address})`,
+      )
+      return
+    }
+
+    const takenUnitAmount = BigInt(event.args.unit)
+    const takenBaseAmount = unitToBase(book.unitSize, takenUnitAmount, priceRaw)
+    const takenQuoteAmount = unitToQuote(book.unitSize, takenUnitAmount)
+
+    // update book
+    await context.db
+      .update(Book, { id: event.args.bookId.toString() })
+      .set(() => ({
+        priceRaw,
+        inversePrice: formatInvertedPrice(
+          priceRaw,
+          base.decimals,
+          quote.decimals,
+        ),
+        tick,
+        lastTakenTimestamp: Number(event.block.timestamp),
+        lastTakenBlockNumber: Number(event.block.number),
+      }))
+
+    // update depth
+    await context.db.update(Depth, { id: depthID }).set((row: any) => ({
+      unitAmount: row.unitAmount - takenUnitAmount,
+      quoteAmount: row.quoteAmount - takenQuoteAmount,
+      baseAmount: row.baseAmount - takenBaseAmount,
+    }))
+
+    // updateChart(
+    //     event.block,
+    //     takenBaseAmountDecimal,
+    //     takenQuoteAmountDecimal,
+    //     book,
+    //     base,
+    //     quote,
+    // )
+    let currentOrderIndex = depth.latestTakenOrderIndex
+    let remainingTakenUnitAmount = takenUnitAmount
+    while (remainingTakenUnitAmount > ZERO_BI) {
+      const orderID = encodeOrderID(book.id, tick, currentOrderIndex)
+      const openOrder = await context.db.find(OpenOrder, {
+        id: orderID.toString(),
+      })
+      if (!openOrder) {
+        currentOrderIndex = currentOrderIndex + ONE_BI
+        continue
+      }
+
+      const openOrderRemainingUnitAmount =
+        BigInt(openOrder.unitAmount) - BigInt(openOrder.filledUnitAmount)
+      let filledUnitAmount = ZERO_BI
+      if (remainingTakenUnitAmount < openOrderRemainingUnitAmount) {
+        filledUnitAmount = remainingTakenUnitAmount
+      } else {
+        filledUnitAmount = openOrderRemainingUnitAmount
+      }
+
+      remainingTakenUnitAmount = remainingTakenUnitAmount - filledUnitAmount
+
+      await context.db
+        .update(OpenOrder, { id: orderID.toString() })
+        .set((row: any) => {
+          const updatedFilledUnitAmount =
+            row.filledUnitAmount + filledUnitAmount
+          const claimableUnitAfterFill =
+            row.claimableUnitAmount + filledUnitAmount
+          const remainingCancelableUnitAmount =
+            row.cancelableUnitAmount - filledUnitAmount
+          return {
+            // filled
+            filledUnitAmount: updatedFilledUnitAmount,
+            filledBaseAmount: unitToBase(
+              book.unitSize,
+              updatedFilledUnitAmount,
+              row.priceRaw,
+            ),
+            filledQuoteAmount: unitToQuote(
+              book.unitSize,
+              updatedFilledUnitAmount,
+            ),
+            // claimable
+            claimableUnitAmount: claimableUnitAfterFill,
+            claimableBaseAmount: unitToBase(
+              book.unitSize,
+              claimableUnitAfterFill,
+              row.priceRaw,
+            ),
+            claimableQuoteAmount: unitToQuote(
+              book.unitSize,
+              claimableUnitAfterFill,
+            ),
+            // cancelable
+            cancelableUnitAmount: remainingCancelableUnitAmount,
+            cancelableBaseAmount: unitToBase(
+              book.unitSize,
+              remainingCancelableUnitAmount,
+              row.priceRaw,
+            ),
+            cancelableQuoteAmount: unitToQuote(
+              book.unitSize,
+              remainingCancelableUnitAmount,
+            ),
+          }
+        })
+
+      if (openOrder.unitAmount === openOrder.filledUnitAmount) {
+        currentOrderIndex = currentOrderIndex + ONE_BI
+      }
+    }
   },
 )
 

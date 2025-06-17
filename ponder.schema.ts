@@ -8,30 +8,50 @@ export const Token = onchainTable('Token', (t) => ({
 }))
 
 export const Book = onchainTable('Book', (t) => ({
+  // immutable values
+  // book id
   id: t.text().primaryKey(),
+  // creation
   createdAtTimestamp: t.bigint(),
+  // block book was created at
   createdAtBlockNumber: t.bigint(),
+  // quote token
   quote: t.text(),
   quoteSymbol: t.text(),
   quoteName: t.text(),
   quoteDecimals: t.numeric(),
+  // base token
   base: t.text(),
   baseSymbol: t.text(),
   baseName: t.text(),
   baseDecimals: t.numeric(),
+  // unit size
   unitSize: t.bigint(),
+  // maker policy
   makerPolicy: t.bigint(),
+  // maker fee
   makerFee: t.numeric(),
   isMakerFeeInQuote: t.boolean(),
+  // taker policy
   takerPolicy: t.bigint(),
+  // taker fee
   takerFee: t.numeric(),
   isTakerFeeInQuote: t.boolean(),
+  // hooks
   hooks: t.text(),
+
+  // mutable values
+  // current price tracker
   priceRaw: t.bigint(),
+  // quote per base
   price: t.numeric(),
+  // base per quote
   inversePrice: t.numeric(),
+  // current tick
   tick: t.bigint(),
+  // last taken timestamp
   lastTakenTimestamp: t.bigint(),
+  // last taken block number
   lastTakenBlockNumber: t.bigint(),
 }))
 
