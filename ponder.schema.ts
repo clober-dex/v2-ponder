@@ -1,143 +1,144 @@
 import { onchainTable } from 'ponder'
 
 export const Token = onchainTable('Token', (t) => ({
-  address: t.text().primaryKey(),
-  symbol: t.text(),
-  name: t.text(),
-  decimals: t.bigint(),
+  address: t.hex().primaryKey(),
+  symbol: t.text().notNull(),
+  name: t.text().notNull(),
+  decimals: t.integer().notNull(),
 }))
 
 export const Book = onchainTable('Book', (t) => ({
   // immutable values
   // book id
-  id: t.text().primaryKey(),
+  id: t.bigint().primaryKey(),
   // creation
-  createdAtTimestamp: t.bigint(),
+  createdAtTimestamp: t.bigint().notNull(),
   // block book was created at
-  createdAtBlockNumber: t.bigint(),
+  createdAtBlockNumber: t.bigint().notNull(),
   // quote token
-  quote: t.text(),
-  quoteSymbol: t.text(),
-  quoteName: t.text(),
-  quoteDecimals: t.numeric(),
+  quote: t.hex().notNull(),
+  quoteSymbol: t.text().notNull(),
+  quoteName: t.text().notNull(),
+  quoteDecimals: t.integer().notNull(),
   // base token
-  base: t.text(),
-  baseSymbol: t.text(),
-  baseName: t.text(),
-  baseDecimals: t.numeric(),
+  base: t.hex().notNull(),
+  baseSymbol: t.text().notNull(),
+  baseName: t.text().notNull(),
+  baseDecimals: t.integer().notNull(),
   // unit size
-  unitSize: t.bigint(),
+  unitSize: t.bigint().notNull(),
   // maker policy
-  makerPolicy: t.bigint(),
+  makerPolicy: t.bigint().notNull(),
   // maker fee
-  makerFee: t.numeric(),
-  isMakerFeeInQuote: t.boolean(),
+  makerFee: t.real().notNull(),
+  isMakerFeeInQuote: t.boolean().notNull(),
   // taker policy
-  takerPolicy: t.bigint(),
+  takerPolicy: t.bigint().notNull(),
   // taker fee
-  takerFee: t.numeric(),
-  isTakerFeeInQuote: t.boolean(),
+  takerFee: t.real().notNull(),
+  isTakerFeeInQuote: t.boolean().notNull(),
   // hooks
-  hooks: t.text(),
+  hooks: t.hex().notNull(),
 
   // mutable values
   // current price tracker
-  priceRaw: t.bigint(),
+  priceRaw: t.bigint().notNull(),
   // quote per base
-  price: t.numeric(),
+  price: t.real().notNull(),
   // base per quote
-  inversePrice: t.numeric(),
+  inversePrice: t.real().notNull(),
   // current tick
-  tick: t.bigint(),
+  tick: t.bigint().notNull(),
   // last taken timestamp
-  lastTakenTimestamp: t.bigint(),
+  lastTakenTimestamp: t.bigint().notNull(),
   // last taken block number
-  lastTakenBlockNumber: t.bigint(),
+  lastTakenBlockNumber: t.bigint().notNull(),
 }))
 
 export const Depth = onchainTable('Depth', (t) => ({
   id: t.text().primaryKey(),
-  book: t.text(),
-  tick: t.bigint(),
-  priceRaw: t.bigint(),
-  price: t.numeric(),
-  inversePrice: t.numeric(),
-  unitAmount: t.bigint(),
-  baseAmount: t.bigint(),
-  quoteAmount: t.bigint(),
-  latestTakenOrderIndex: t.bigint(),
+  book: t.bigint().notNull(),
+  tick: t.bigint().notNull(),
+  priceRaw: t.bigint().notNull(),
+
+  price: t.real().notNull(),
+  inversePrice: t.real().notNull(),
+  unitAmount: t.bigint().notNull(),
+  baseAmount: t.bigint().notNull(),
+  quoteAmount: t.bigint().notNull(),
+  latestTakenOrderIndex: t.bigint().notNull(),
 }))
 
 export const OpenOrder = onchainTable('OpenOrder', (t) => ({
   // immutable values
   // orderId
-  id: t.text().primaryKey(),
+  id: t.bigint().primaryKey(),
   // which txn the make was included in
-  transaction: t.text(),
+  transaction: t.hex().notNull(),
   // time of txn
-  timestamp: t.bigint(),
+  timestamp: t.bigint().notNull(),
   // book position is within
-  book: t.text(),
-  unitSize: t.bigint(),
+  book: t.bigint().notNull(),
+  unitSize: t.bigint().notNull(),
   // allow indexing by tokens
-  quote: t.text(),
-  quoteSymbol: t.text(),
-  quoteName: t.text(),
-  quoteDecimals: t.numeric(),
+  quote: t.hex().notNull(),
+  quoteSymbol: t.text().notNull(),
+  quoteName: t.text().notNull(),
+  quoteDecimals: t.numeric().notNull(),
   // allow indexing by tokens
-  base: t.text(),
-  baseSymbol: t.text(),
-  baseName: t.text(),
-  baseDecimals: t.numeric(),
+  base: t.hex().notNull(),
+  baseSymbol: t.text().notNull(),
+  baseName: t.text().notNull(),
+  baseDecimals: t.numeric().notNull(),
   // txn origin
-  origin: t.text(),
+  origin: t.hex().notNull(),
   // current price tracker
-  priceRaw: t.bigint(),
+  priceRaw: t.bigint().notNull(),
   // current tick
-  tick: t.bigint(),
+  tick: t.bigint().notNull(),
   // current order index
-  orderIndex: t.bigint(),
+  orderIndex: t.bigint().notNull(),
   // quote per base
-  price: t.numeric(),
+  price: t.real().notNull(),
   // base per quote
-  inversePrice: t.numeric(),
+  inversePrice: t.real().notNull(),
   // mutable values
   // owner of position where liquidity made to
-  owner: t.text(),
+  owner: t.hex().notNull(),
   // order size (descending when cancel)
-  unitAmount: t.bigint(),
-  baseAmount: t.bigint(),
-  quoteAmount: t.bigint(),
+  unitAmount: t.bigint().notNull(),
+  baseAmount: t.bigint().notNull(),
+  quoteAmount: t.bigint().notNull(),
   // filled (ascending when taken)
-  filledUnitAmount: t.bigint(),
-  filledBaseAmount: t.bigint(),
-  filledQuoteAmount: t.bigint(),
+  filledUnitAmount: t.bigint().notNull(),
+  filledBaseAmount: t.bigint().notNull(),
+  filledQuoteAmount: t.bigint().notNull(),
   // claimed (descending when claim)
-  claimedUnitAmount: t.bigint(),
-  claimedBaseAmount: t.bigint(),
-  claimedQuoteAmount: t.bigint(),
+  claimedUnitAmount: t.bigint().notNull(),
+  claimedBaseAmount: t.bigint().notNull(),
+  claimedQuoteAmount: t.bigint().notNull(),
   // claimable (ascending when taken)
-  claimableUnitAmount: t.bigint(),
-  claimableBaseAmount: t.bigint(),
-  claimableQuoteAmount: t.bigint(),
+  claimableUnitAmount: t.bigint().notNull(),
+  claimableBaseAmount: t.bigint().notNull(),
+  claimableQuoteAmount: t.bigint().notNull(),
   // cancelable (descending when fill or cancel)
-  cancelableUnitAmount: t.bigint(),
-  cancelableBaseAmount: t.bigint(),
-  cancelableQuoteAmount: t.bigint(),
+  cancelableUnitAmount: t.bigint().notNull(),
+  cancelableBaseAmount: t.bigint().notNull(),
+  cancelableQuoteAmount: t.bigint().notNull(),
 }))
 
 export const ChartLog = onchainTable('ChartLog', (t) => ({
   id: t.text().primaryKey(),
-  base: t.text(),
-  quote: t.text(),
-  marketCode: t.text(),
-  intervalType: t.text(),
-  timestamp: t.bigint(),
-  open: t.numeric(),
-  high: t.numeric(),
-  low: t.numeric(),
-  close: t.numeric(),
-  baseVolume: t.numeric(),
-  bidBookBaseVolume: t.numeric(),
-  askBookBaseVolume: t.numeric(),
+  base: t.hex().notNull(),
+  quote: t.hex().notNull(),
+  marketCode: t.text().notNull(),
+  intervalType: t.text().notNull(),
+  timestamp: t.bigint().notNull(),
+  open: t.real().notNull(),
+  high: t.real().notNull(),
+  low: t.real().notNull(),
+  close: t.real().notNull(),
+  baseVolume: t.real().notNull(),
+  bidBookBaseVolume: t.real().notNull(),
+  askBookBaseVolume: t.real().notNull(),
 }))

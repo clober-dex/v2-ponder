@@ -1,5 +1,6 @@
 import { createConfig } from 'ponder'
 import { monadTestnet, riseTestnet } from 'viem/chains'
+import { getAddress } from 'viem'
 
 import { BookManagerAbi } from './abis/BookManager'
 
@@ -59,8 +60,8 @@ export default createConfig({
   contracts: {
     BookManager: {
       chain: CHAIN.contracts.BookManager.chain,
-      abi: CHAIN.contracts.BookManager.abi,
-      address: CHAIN.contracts.BookManager.address,
+      abi: BookManagerAbi,
+      address: getAddress(CHAIN.contracts.BookManager.address),
       startBlock: CHAIN.contracts.BookManager.startBlock,
     },
   },

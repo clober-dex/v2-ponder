@@ -100,25 +100,25 @@ ponder.on(
     }
 
     await context.db.insert(Book).values({
-      id: bookId,
-      createdAtTimestamp: Number(event.block.timestamp),
-      createdAtBlockNumber: Number(event.block.number),
+      id: BigInt(bookId),
+      createdAtTimestamp: BigInt(event.block.timestamp),
+      createdAtBlockNumber: BigInt(event.block.number),
       quote: quote.address,
       quoteSymbol: quote.symbol,
       quoteName: quote.name,
-      quoteDecimals: quote.decimals,
+      quoteDecimals: Number(quote.decimals),
       base: base.address,
       baseSymbol: base.symbol,
       baseName: base.name,
-      baseDecimals: base.decimals,
-      unitSize: event.args.unitSize,
-      makerPolicy: event.args.makerPolicy,
+      baseDecimals: Number(base.decimals),
+      unitSize: BigInt(event.args.unitSize),
+      makerPolicy: BigInt(event.args.makerPolicy),
       makerFee: getFeeRate(event.args.makerPolicy),
       isMakerFeeInQuote: getUsesFeeInQuote(event.args.makerPolicy),
-      takerPolicy: event.args.takerPolicy,
+      takerPolicy: BigInt(event.args.takerPolicy),
       takerFee: getFeeRate(event.args.takerPolicy),
       isTakerFeeInQuote: getUsesFeeInQuote(event.args.takerPolicy),
-      hooks: event.args.hooks,
+      hooks: getAddress(event.args.hooks),
       priceRaw: ZERO_BI,
       price: 0,
       inversePrice: 0,
@@ -149,7 +149,7 @@ ponder.on(
     }
     context: { db: any; client: any; chain: { id: number } }
   }) => {
-    const bookId = event.args.bookId.toString()
+    const bookId = event.args.bookId
     const book = await context.db.find(Book, {
       id: bookId,
     })
@@ -176,27 +176,26 @@ ponder.on(
 
       await context.db.insert(OpenOrder).values({
         id: orderID,
-        transaction: event.transaction.hash.toString(),
-        timestamp: Number(event.block.timestamp),
-        book: book.id,
+        transaction: event.transaction.hash.toString() as `0x${string}`,
+        timestamp: BigInt(event.block.timestamp),
+        book: BigInt(book.id),
         unitSize: BigInt(book.unitSize),
         quote: quote.address,
         quoteSymbol: quote.symbol,
         quoteName: quote.name,
+        quoteDecimals: Number(quote.decimals),
         base: base.address,
         baseSymbol: base.symbol,
         baseName: base.name,
-        quoteDecimals: quote.decimals,
+        baseDecimals: Number(base.decimals),
         origin: getAddress(event.transaction.from),
         owner: getAddress(event.args.user),
         priceRaw,
         tick,
         orderIndex: BigInt(event.args.orderIndex),
-        price: formatPrice(priceRaw, base.decimals, quote.decimals),
-        inversePrice: formatInvertedPrice(
-          priceRaw,
-          base.decimals,
-          quote.decimals,
+        price: Number(formatPrice(priceRaw, base.decimals, quote.decimals)),
+        inversePrice: Number(
+          formatInvertedPrice(priceRaw, base.decimals, quote.decimals),
         ),
         // initial
         unitAmount: BigInt(event.args.unit),
@@ -229,18 +228,16 @@ ponder.on(
         // new depth
         await context.db.insert(Depth).values({
           id: depthID,
-          book: book.id,
+          book: BigInt(book.id),
           tick,
           latestTakenOrderIndex: ZERO_BI,
           unitAmount: BigInt(event.args.unit),
           baseAmount,
           quoteAmount,
           priceRaw,
-          price: formatPrice(priceRaw, base.decimals, quote.decimals),
-          inversePrice: formatInvertedPrice(
-            priceRaw,
-            base.decimals,
-            quote.decimals,
+          price: Number(formatPrice(priceRaw, base.decimals, quote.decimals)),
+          inversePrice: Number(
+            formatInvertedPrice(priceRaw, base.decimals, quote.decimals),
           ),
         })
       } else {
@@ -283,18 +280,16 @@ ponder.on(
     }
     const tick = BigInt(event.args.tick)
     const priceRaw = tickToPrice(Number(tick))
+    const bookId = BigInt(event.args.bookId)
     const book = await context.db.find(Book, {
-      id: event.args.bookId.toString(),
+      id: bookId,
     })
     if (!book) {
-      console.debug(`[TAKE] Book not found: ${event.args.bookId}`)
+      console.debug(`[TAKE] Book not found: ${bookId}`)
       return
     }
 
-    const depthID = event.args.bookId
-      .toString()
-      .concat('-')
-      .concat(tick.toString())
+    const depthID = bookId.toString().concat('-').concat(tick.toString())
     const [depth, quote, base] = await Promise.all([
       context.db.find(Depth, {
         id: depthID,
@@ -328,20 +323,16 @@ ponder.on(
     )
 
     // update book
-    await context.db
-      .update(Book, { id: event.args.bookId.toString() })
-      .set(() => ({
-        priceRaw,
-        price: formatPrice(priceRaw, base.decimals, quote.decimals),
-        inversePrice: formatInvertedPrice(
-          priceRaw,
-          base.decimals,
-          quote.decimals,
-        ),
-        tick,
-        lastTakenTimestamp: Number(event.block.timestamp),
-        lastTakenBlockNumber: Number(event.block.number),
-      }))
+    await context.db.update(Book, { id: bookId }).set(() => ({
+      priceRaw,
+      price: Number(formatPrice(priceRaw, base.decimals, quote.decimals)),
+      inversePrice: Number(
+        formatInvertedPrice(priceRaw, base.decimals, quote.decimals),
+      ),
+      tick,
+      lastTakenTimestamp: BigInt(event.block.timestamp),
+      lastTakenBlockNumber: BigInt(event.block.number),
+    }))
 
     // update depth
     await context.db.update(Depth, { id: depthID }).set((row: any) => ({
@@ -389,7 +380,7 @@ ponder.on(
           base: base.address,
           quote: quote.address,
           intervalType,
-          timestamp: Number(timestampForAcc),
+          timestamp: BigInt(timestampForAcc),
           open: book.price,
           high: book.price,
           low: book.price,
@@ -419,7 +410,7 @@ ponder.on(
           base: quote.address,
           quote: base.address,
           intervalType,
-          timestamp: Number(timestampForAcc),
+          timestamp: BigInt(timestampForAcc),
           open: book.inversePrice,
           high: book.inversePrice,
           low: book.inversePrice,
