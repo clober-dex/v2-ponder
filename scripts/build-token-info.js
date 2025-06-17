@@ -41,7 +41,7 @@ async function main() {
   } = await response.json()
 
   fs.writeFileSync(
-    `${chainId}-tokens.json`,
+    `tokens/${chainId}.json`,
     JSON.stringify(
       tokens.map((token) => ({
         address: getAddress(token.id),

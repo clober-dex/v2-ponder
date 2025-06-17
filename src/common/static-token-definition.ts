@@ -15,8 +15,8 @@ export const getStaticDefinition = (
   tokenAddress: `0x${string}`,
 ): TokenDefinition | null => {
   const staticDefinitions = (
-    fs.existsSync(`./${chainId}-tokens.json`)
-      ? JSON.parse(fs.readFileSync(`./${chainId}-tokens.json`, 'utf-8'))
+    fs.existsSync(`./tokens${chainId}.json`)
+      ? JSON.parse(fs.readFileSync(`./tokens/${chainId}.json`, 'utf-8'))
       : []
   ) as TokenDefinition[]
   tokenAddress = getAddress(tokenAddress)
