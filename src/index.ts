@@ -1,6 +1,6 @@
 import { ponder } from 'ponder:registry'
 import { Token, Book } from 'ponder:schema'
-import { formatUnits, getAddress } from 'viem'
+import { formatUnits, getAddress, isAddressEqual, zeroAddress } from 'viem'
 import BigNumber from 'bignumber.js'
 
 import { ChartLog, Depth, OpenOrder } from '../ponder.schema'
@@ -564,9 +564,35 @@ ponder.on(
     event,
     context,
   }: {
-    event: any
+    event: {
+      args: {
+        from: `0x${string}`
+        to: `0x${string}`
+        tokenId: bigint
+      }
+      block: { timestamp: bigint; number: bigint }
+      transaction: { hash: string; from: `0x${string}` }
+    }
     context: { db: any; client: any; chain: { id: number } }
   }) => {
-    // Handle the Transfer event
+    const from = getAddress(event.args.from)
+    const to = getAddress(event.args.to)
+    const orderID = event.args.tokenId.toString()
+
+    if (isAddressEqual(from, zeroAddress) || isAddressEqual(to, zeroAddress)) {
+      // mint or burn events are handled in the make, cancel, and claim events
+      return
+    }
+    const openOrder = await context.db.find(OpenOrder, {
+      id: orderID,
+    })
+    if (!openOrder) {
+      console.debug(`[TRANSFER] Open order not found: ${orderID}`)
+      return
+    }
+
+    await context.db.update(OpenOrder, { id: orderID }).set(() => ({
+      owner: to,
+    }))
   },
 )
