@@ -56,5 +56,12 @@ export default createConfig({
       rpc: CHAIN.rpc,
     },
   },
-  ...CHAIN.contracts,
+  contracts: {
+    BookManager: {
+      chain: CHAIN.contracts.BookManager.chain,
+      abi: CHAIN.contracts.BookManager.abi,
+      address: CHAIN.contracts.BookManager.address,
+      startBlock: CHAIN.contracts.BookManager.startBlock,
+    },
+  },
 })
