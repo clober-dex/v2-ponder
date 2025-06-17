@@ -49,31 +49,57 @@ export const Depth = onchainTable('Depth', (t) => ({
 }))
 
 export const OpenOrder = onchainTable('OpenOrder', (t) => ({
+  // immutable values
+  // orderId
   id: t.text().primaryKey(),
-  book: t.text(),
-  quote: t.text(),
-  base: t.text(),
-  origin: t.text(),
+  // which txn the make was included in
+  transaction: t.text(),
+  // time of txn
   timestamp: t.bigint(),
+  // book position is within
+  book: t.text(),
+  // allow indexing by tokens
+  quote: t.text(),
+  quoteSymbol: t.text(),
+  quoteName: t.text(),
+  quoteDecimals: t.numeric(),
+  // allow indexing by tokens
+  base: t.text(),
+  baseSymbol: t.text(),
+  baseName: t.text(),
+  baseDecimals: t.numeric(),
+  // txn origin
+  origin: t.text(),
+  // current price tracker
   priceRaw: t.bigint(),
+  // current tick
   tick: t.bigint(),
+  // current order index
   orderIndex: t.bigint(),
+  // quote per base
   price: t.numeric(),
+  // base per quote
   inversePrice: t.numeric(),
+  // mutable values
+  // owner of position where liquidity made to
   owner: t.text(),
-  amountUSD: t.numeric(),
+  // order size (descending when cancel)
   unitAmount: t.bigint(),
   baseAmount: t.bigint(),
   quoteAmount: t.bigint(),
+  // filled (ascending when taken)
   filledUnitAmount: t.bigint(),
   filledBaseAmount: t.bigint(),
   filledQuoteAmount: t.bigint(),
+  // claimed (descending when claim)
   claimedUnitAmount: t.bigint(),
   claimedBaseAmount: t.bigint(),
   claimedQuoteAmount: t.bigint(),
+  // claimable (ascending when taken)
   claimableUnitAmount: t.bigint(),
   claimableBaseAmount: t.bigint(),
   claimableQuoteAmount: t.bigint(),
+  // cancelable (descending when fill or cancel)
   cancelableUnitAmount: t.bigint(),
   cancelableBaseAmount: t.bigint(),
   cancelableQuoteAmount: t.bigint(),
