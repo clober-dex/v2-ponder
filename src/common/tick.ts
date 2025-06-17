@@ -1,6 +1,10 @@
 import BigNumber from 'bignumber.js'
 
-import { ONE_BD, ZERO_BD } from './constants'
+import { ONE_BD } from './constants'
+
+BigNumber.config({
+  DECIMAL_PLACES: 100,
+})
 
 const R = [
   BigInt('79220240490215316061937756560'), // 0xfff97272373d413259a46990
@@ -53,22 +57,21 @@ export function formatPrice(
   price: bigint,
   baseDecimals: number,
   quoteDecimals: number,
-): BigNumber {
-  const decimalPrice = new BigNumber(price.toString()).div(
-    new BigNumber(PRICE_PRECISION.toString()),
-  )
-
-  const baseFactor = new BigNumber(10).pow(baseDecimals)
-  const quoteFactor = new BigNumber(10).pow(quoteDecimals)
-
-  return decimalPrice.times(baseFactor).div(quoteFactor)
+): string {
+  return new BigNumber(price.toString())
+    .div(new BigNumber(2).pow(PRICE_PRECISION.toString()))
+    .times(new BigNumber(10).pow(baseDecimals))
+    .div(new BigNumber(10).pow(quoteDecimals))
+    .toFixed()
 }
 
 export function formatInvertedPrice(
   price: bigint,
   baseDecimals: number,
   quoteDecimals: number,
-): BigNumber {
-  const formatted = formatPrice(price, baseDecimals, quoteDecimals)
-  return formatted.isZero() ? ZERO_BD : ONE_BD.div(formatted)
+): string {
+  if (price === 0n) {
+    return '0'
+  }
+  return ONE_BD.div(formatPrice(price, quoteDecimals, baseDecimals)).toFixed()
 }

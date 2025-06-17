@@ -188,6 +188,7 @@ ponder.on(
         transaction: event.transaction.hash.toString(),
         timestamp: Number(event.block.timestamp),
         book: book.id,
+        unitSize: BigInt(book.unitSize),
         quote: quote.address,
         quoteSymbol: quote.symbol,
         quoteName: quote.name,
@@ -254,9 +255,9 @@ ponder.on(
       } else {
         // update existing depth
         await context.db.update(Depth, { id: depthID }).set((row: any) => ({
-          unitAmount: row.unitAmount.add(BigInt(event.args.unit)),
-          baseAmount: row.baseAmount.add(baseAmount),
-          quoteAmount: row.quoteAmount.add(quoteAmount),
+          unitAmount: row.unitAmount + BigInt(event.args.unit),
+          baseAmount: row.baseAmount + baseAmount,
+          quoteAmount: row.quoteAmount + quoteAmount,
         }))
       }
     } else {

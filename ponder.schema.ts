@@ -58,6 +58,7 @@ export const OpenOrder = onchainTable('OpenOrder', (t) => ({
   timestamp: t.bigint(),
   // book position is within
   book: t.text(),
+  unitSize: t.bigint(),
   // allow indexing by tokens
   quote: t.text(),
   quoteSymbol: t.text(),
