@@ -1,7 +1,5 @@
 import BigNumber from 'bignumber.js'
 
-import { ONE_BD } from './constants'
-
 BigNumber.config({
   DECIMAL_PLACES: 100,
 })
@@ -73,5 +71,7 @@ export function formatInvertedPrice(
   if (price === 0n) {
     return '0'
   }
-  return ONE_BD.div(formatPrice(price, quoteDecimals, baseDecimals)).toFixed()
+  return new BigNumber(1)
+    .div(formatPrice(price, quoteDecimals, baseDecimals))
+    .toFixed()
 }

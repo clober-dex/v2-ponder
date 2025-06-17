@@ -1,11 +1,11 @@
 import { ponder } from 'ponder:registry'
 import { Token, Book } from 'ponder:schema'
-import { getAddress } from 'viem'
+import { formatUnits, getAddress } from 'viem'
 import BigNumber from 'bignumber.js'
 
-import { Depth, OpenOrder } from '../ponder.schema'
+import { ChartLog, Depth, OpenOrder } from '../ponder.schema'
 
-import { ONE_BI, ZERO_BD, ZERO_BI } from './common/constants'
+import { ONE_BI, ZERO_BI } from './common/constants'
 import {
   fetchTokenDecimals,
   fetchTokenName,
@@ -14,6 +14,11 @@ import {
 import { formatInvertedPrice, formatPrice, tickToPrice } from './common/tick'
 import { encodeOrderID } from './common/order'
 import { unitToBase, unitToQuote } from './common/amount'
+import {
+  CHART_LOG_INTERVALS,
+  encodeChartLogID,
+  encodeMarketCode,
+} from './common/chart'
 
 export function getFeeRate(feePolicy: number): BigNumber {
   const RATE_MASK = 0x7fffffn // 8388607n
@@ -77,7 +82,6 @@ ponder.on(
         symbol,
         name,
         decimals,
-        priceUSD: ZERO_BD,
       })
       quote = await context.db.find(Token, {
         address: quoteAddress,
@@ -101,7 +105,6 @@ ponder.on(
         symbol,
         name,
         decimals,
-        priceUSD: ZERO_BD,
       })
       base = await context.db.find(Token, {
         address: baseAddress,
@@ -129,8 +132,8 @@ ponder.on(
       isTakerFeeInQuote: getUsesFeeInQuote(event.args.takerPolicy),
       hooks: event.args.hooks,
       priceRaw: ZERO_BI,
-      price: ZERO_BD,
-      inversePrice: ZERO_BD,
+      price: 0,
+      inversePrice: 0,
       tick: ZERO_BI,
       lastTakenBlockNumber: ZERO_BI,
       lastTakenTimestamp: ZERO_BI,
@@ -328,13 +331,20 @@ ponder.on(
 
     const takenUnitAmount = BigInt(event.args.unit)
     const takenBaseAmount = unitToBase(book.unitSize, takenUnitAmount, priceRaw)
+    const takenBaseAmountDecimal = Number(
+      formatUnits(BigInt(takenBaseAmount), base.decimals),
+    )
     const takenQuoteAmount = unitToQuote(book.unitSize, takenUnitAmount)
+    const takenQuoteAmountDecimal = Number(
+      formatUnits(BigInt(takenQuoteAmount), quote.decimals),
+    )
 
     // update book
     await context.db
       .update(Book, { id: event.args.bookId.toString() })
       .set(() => ({
         priceRaw,
+        price: formatPrice(priceRaw, base.decimals, quote.decimals),
         inversePrice: formatInvertedPrice(
           priceRaw,
           base.decimals,
@@ -352,14 +362,100 @@ ponder.on(
       baseAmount: row.baseAmount - takenBaseAmount,
     }))
 
-    // updateChart(
-    //     event.block,
-    //     takenBaseAmountDecimal,
-    //     takenQuoteAmountDecimal,
-    //     book,
-    //     base,
-    //     quote,
-    // )
+    for (let i = 0; i < Object.keys(CHART_LOG_INTERVALS).length; i++) {
+      const intervalType = Object.keys(CHART_LOG_INTERVALS)[i]!
+      const intervalInNumber = CHART_LOG_INTERVALS[intervalType]!
+      const timestampForAcc = Math.floor(
+        (Number(event.block.timestamp) / intervalInNumber) * intervalInNumber,
+      )
+
+      // natural chart log
+      const chartLogID = encodeChartLogID(
+        base.address,
+        quote.address,
+        intervalType,
+        timestampForAcc,
+      )
+      const invertedChartLogID = encodeChartLogID(
+        quote.address,
+        base.address,
+        intervalType,
+        timestampForAcc,
+      )
+
+      const marketCode = encodeMarketCode(base.address, quote.address)
+      const invertedMarketCode = encodeMarketCode(quote.address, base.address)
+      const [chartLog, invertedChartLog] = await Promise.all([
+        context.db.find(ChartLog, {
+          id: chartLogID,
+        }),
+        context.db.find(ChartLog, {
+          id: invertedChartLogID,
+        }),
+      ])
+
+      if (!chartLog) {
+        await context.db.insert(ChartLog).values({
+          id: chartLogID,
+          marketCode,
+          base: base.address,
+          quote: quote.address,
+          intervalType,
+          timestamp: Number(timestampForAcc),
+          open: book.price,
+          high: book.price,
+          low: book.price,
+          close: book.price,
+          baseVolume: takenBaseAmountDecimal,
+          bidBookBaseVolume: takenBaseAmountDecimal,
+          askBookBaseVolume: 0,
+        })
+      } else {
+        await context.db
+          .update(ChartLog, { id: chartLogID })
+          .set((row: any) => {
+            return {
+              high: book.price > row.high ? book.price : row.high,
+              low: book.price < row.low ? book.price : row.low,
+              close: book.price,
+              baseVolume: row.baseVolume + takenBaseAmountDecimal,
+              bidBookBaseVolume: row.bidBookBaseVolume + takenBaseAmountDecimal,
+            }
+          })
+      }
+
+      if (!invertedChartLog) {
+        await context.db.insert(ChartLog).values({
+          id: invertedChartLogID,
+          marketCode: invertedMarketCode,
+          base: quote.address,
+          quote: base.address,
+          intervalType,
+          timestamp: Number(timestampForAcc),
+          open: book.inversePrice,
+          high: book.inversePrice,
+          low: book.inversePrice,
+          close: book.inversePrice,
+          baseVolume: takenQuoteAmountDecimal,
+          bidBookBaseVolume: 0,
+          askBookBaseVolume: takenQuoteAmountDecimal,
+        })
+      } else {
+        await context.db
+          .update(ChartLog, { id: invertedChartLogID })
+          .set((row: any) => {
+            return {
+              high: book.inversePrice > row.high ? book.inversePrice : row.high,
+              low: book.inversePrice < row.low ? book.inversePrice : row.low,
+              close: book.inversePrice,
+              baseVolume: row.baseVolume + takenQuoteAmountDecimal,
+              askBookBaseVolume:
+                row.askBookBaseVolume + takenQuoteAmountDecimal,
+            }
+          })
+      }
+    }
+
     let currentOrderIndex = depth.latestTakenOrderIndex
     let remainingTakenUnitAmount = takenUnitAmount
     while (remainingTakenUnitAmount > ZERO_BI) {
